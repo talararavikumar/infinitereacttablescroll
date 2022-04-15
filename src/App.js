@@ -1,8 +1,10 @@
-import React from 'react'
+import React , {useState} from 'react'
 import styled from 'styled-components'
 import { useTable, useBlockLayout } from 'react-table'
 import { FixedSizeList } from 'react-window'
 import scrollbarWidth from './scrollbarWidth'
+import InfiniteLoader from "react-window-infinite-loader";
+
 
 import makeData from './makeData'
 
@@ -36,7 +38,7 @@ const Styles = styled.div`
   }
 `
 
-function Table({ columns, data }) {
+function Table({ columns, data, moreItemsLoading, hasNextPage,  loadMore}) {
   // Use the state and functions returned from useTable to build your UI
 
   const defaultColumn = React.useMemo(
@@ -88,6 +90,7 @@ function Table({ columns, data }) {
     [prepareRow, rows]
   )
 
+  const itemCount = hasNextPage ? rows.length + 1 : rows.length;
   // Render the UI for your table
   return (
     <div {...getTableProps()} className="table">
@@ -104,14 +107,25 @@ function Table({ columns, data }) {
       </div>
 
       <div {...getTableBodyProps()}>
-        <FixedSizeList
-          height={400}
-          itemCount={rows.length}
-          itemSize={35}
-          width={totalColumnsWidth+scrollBarSize}
+        <InfiniteLoader
+          isItemLoaded={index => index < rows.length}
+          itemCount={itemCount}
+          loadMoreItems={loadMore}
         >
-          {RenderRow}
-        </FixedSizeList>
+          {({ onItemsRendered, ref }) => (
+            <FixedSizeList
+              height={400}
+              itemCount={rows.length}
+              itemSize={35}
+              width={totalColumnsWidth + scrollBarSize}
+              className="list-container"
+              onItemsRendered={onItemsRendered}
+              ref={ref}
+            >
+              {RenderRow}
+            </FixedSizeList>
+          )}
+        </InfiniteLoader>
       </div>
     </div>
   )
@@ -164,11 +178,28 @@ function App() {
     []
   )
 
-  const data = React.useMemo(() => makeData(100000), [])
+  // const data = React.useMemo(() => makeData(50), []);
+  const [hasNextPage] = useState(true);
+  const [moreItemsLoading, setMoreItemsLoading] = useState(false);
+  const [data, setData] = useState(makeData(50));
+
+  const loadMore =  () => {
+    setMoreItemsLoading(true);
+    setData([...data, ...makeData(50)]);
+
+    
+    // fetch('https://dog.ceo/api/breeds/image/random/10')
+    //   .then(res => res.json())
+    //   .then(({ message: newItems }) => this.setState({ 
+    //     moreItemsLoading: false,
+    //     items: [...this.state.items, ...newItems] 
+    //   }));
+    };
 
   return (
     <Styles>
-      <Table columns={columns} data={data} />
+      <Table columns={columns} data={data} hasNextPage = {hasNextPage} 
+      moreItemsLoading = {moreItemsLoading} loadMore = {loadMore}/>
     </Styles>
   )
 }
