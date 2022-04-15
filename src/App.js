@@ -121,6 +121,7 @@ function Table({ columns, data, moreItemsLoading, hasNextPage,  loadMore}) {
               className="list-container"
               onItemsRendered={onItemsRendered}
               ref={ref}
+              overscanCount={4}
             >
               {RenderRow}
             </FixedSizeList>
