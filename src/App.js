@@ -66,8 +66,15 @@ function Table({ columns, data, moreItemsLoading, hasNextPage,  loadMore}) {
     useBlockLayout
   )
 
+  
+
   const RenderRow = React.useCallback(
     ({ index, style }) => {
+
+      if (!(!hasNextPage || index < rows.length)) {
+        const content = "Loading...";
+        return <div style={style}>{content}</div>;
+      } else {
       const row = rows[index]
       prepareRow(row)
       return (
@@ -86,11 +93,31 @@ function Table({ columns, data, moreItemsLoading, hasNextPage,  loadMore}) {
           })}
         </div>
       )
+        }
     },
-    [prepareRow, rows]
+    [prepareRow, rows, hasNextPage]
   )
 
   const itemCount = hasNextPage ? rows.length + 1 : rows.length;
+
+  // Every row is loaded except for our loading indicator row.
+
+  // Render an item or a loading indicator.
+  const Item = ({ index, style }) => {
+    let content;
+    if (!isItemLoaded(index)) {
+      content = "Loading...";
+      return <div style={style}>{content}</div>;
+    } else {
+      content = `${index}`;
+      return <div style={style}>{content}</div>;
+    }
+
+    
+  };
+
+  const isItemLoaded = index => !hasNextPage || index < rows.length;
+  console.log(isItemLoaded());
   // Render the UI for your table
   return (
     <div {...getTableProps()} className="table">
@@ -115,7 +142,7 @@ function Table({ columns, data, moreItemsLoading, hasNextPage,  loadMore}) {
           {({ onItemsRendered, ref }) => (
             <FixedSizeList
               height={400}
-              itemCount={rows.length}
+              itemCount={itemCount}
               itemSize={35}
               width={totalColumnsWidth + scrollBarSize}
               className="list-container"
@@ -180,13 +207,23 @@ function App() {
   )
 
   // const data = React.useMemo(() => makeData(50), []);
-  const [hasNextPage] = useState(true);
+  const [hasNextPage, setHasNextPage] = useState(true);
   const [moreItemsLoading, setMoreItemsLoading] = useState(false);
   const [data, setData] = useState(makeData(50));
 
   const loadMore =  () => {
     setMoreItemsLoading(true);
-    setData([...data, ...makeData(50)]);
+    setTimeout(() => {
+      if(data.length < 100){
+        setData([...data, ...makeData(50)]);
+      }
+      else{
+        setHasNextPage(false);
+        setData([...data, ...makeData(10)]);
+      }
+
+    }, 5000);
+    
 
     
     // fetch('https://dog.ceo/api/breeds/image/random/10')
